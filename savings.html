@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>My Savings Tracker</title>
+    <style>
+        body {
+            font-family: Arial;
+            text-align: center;
+            margin-top: 50px;
+            background: #f4f4f4;
+        }
+        .box {
+            background: white;
+            padding: 20px;
+            width: 300px;
+            margin: auto;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        button {
+            padding: 10px;
+            margin: 5px;
+            cursor: pointer;
+        }
+        input {
+            padding: 8px;
+            margin: 5px;
+            width: 80%;
+        }
+        ul {
+            text-align: left;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+
+<div class="box">
+    <h2>My Savings</h2>
+
+    <h1 id="total">₱0</h1>
+
+    <input type="number" id="startAmount" placeholder="Set Starting Savings">
+    <button onclick="setStarting()">Set Start</button>
+
+    <br><br>
+
+    <input type="number" id="addAmount" placeholder="Add Amount">
+    <button onclick="addMoney()">+ Add</button>
+
+    <h3>History</h3>
+    <ul id="history"></ul>
+</div>
+
+<script>
+    let total = localStorage.getItem("totalSavings") 
+        ? parseFloat(localStorage.getItem("totalSavings")) 
+        : 0;
+
+    let historyList = localStorage.getItem("history") 
+        ? JSON.parse(localStorage.getItem("history")) 
+        : [];
+
+    const totalDisplay = document.getElementById("total");
+    const historyDisplay = document.getElementById("history");
+
+    function updateDisplay() {
+        totalDisplay.innerText = "₱" + total.toFixed(2);
+        historyDisplay.innerHTML = "";
+        historyList.forEach(item => {
+            let li = document.createElement("li");
+            li.textContent = item;
+            historyDisplay.appendChild(li);
+        });
+    }
+
+    function setStarting() {
+        let amount = parseFloat(document.getElementById("startAmount").value);
+        if (!isNaN(amount)) {
+            total = amount;
+            let time = new Date().toLocaleString();
+            historyList.push("Start: ₱" + amount + " (" + time + ")");
+            saveData();
+            updateDisplay();
+        }
+    }
+
+    function addMoney() {
+        let amount = parseFloat(document.getElementById("addAmount").value);
+        if (!isNaN(amount)) {
+            total += amount;
+            let time = new Date().toLocaleString();
+            historyList.push("+ ₱" + amount + " (" + time + ")");
+            saveData();
+            updateDisplay();
+        }
+    }
+
+    function saveData() {
+        localStorage.setItem("totalSavings", total);
+        localStorage.setItem("history", JSON.stringify(historyList));
+    }
+
+    updateDisplay();
+</script>
+
+</body>
+  </html>
