@@ -1,122 +1,291 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Savings Goal</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: #111;
-            color: white;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-        }
+<meta charset="UTF-8">
+<title>Gold Tracker Pro</title>
 
-        .container {
-            width: 350px;
-            text-align: center;
-        }
+<style>
 
-        h1 {
-            margin-bottom: 5px;
-        }
+body{
+font-family:Arial;
+background:#0f0f0f;
+color:white;
+padding:30px;
+}
 
-        .goal {
-            font-size: 14px;
-            color: #aaa;
-            margin-bottom: 20px;
-        }
+.container{
+max-width:1200px;
+margin:auto;
+}
 
-        .bar-bg {
-            width: 100%;
-            height: 25px;
-            background: #333;
-            border-radius: 20px;
-            overflow: hidden;
-            margin-bottom: 20px;
-        }
+h1{
+text-align:center;
+}
 
-        .bar-fill {
-            height: 100%;
-            width: 0%;
-            background: #00c853;
-            transition: width 0.3s ease;
-        }
+.dashboard{
+display:flex;
+gap:20px;
+margin-top:20px;
+}
 
-        .input-row {
-            display: flex;
-            gap: 5px;
-        }
+.card{
+flex:1;
+background:#1a1a1a;
+padding:15px;
+border-radius:10px;
+text-align:center;
+}
 
-        input {
-            flex: 1;
-            padding: 10px;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-        }
+table{
+width:100%;
+border-collapse:collapse;
+margin-top:20px;
+}
 
-        button {
-            width: 50px;
-            border: none;
-            border-radius: 8px;
-            font-size: 20px;
-            background: #00c853;
-            color: white;
-            cursor: pointer;
-        }
+th,td{
+padding:12px;
+text-align:center;
+}
 
-        button:hover {
-            background: #00e676;
-        }
-    </style>
+th{
+background:#222;
+cursor:pointer;
+}
+
+tr{
+border-bottom:1px solid #333;
+}
+
+tr:hover{
+background:#1a1a1a;
+}
+
+img{
+width:60px;
+border-radius:6px;
+}
+
+form{
+margin-top:25px;
+background:#1a1a1a;
+padding:20px;
+border-radius:10px;
+display:grid;
+grid-template-columns:repeat(4,1fr);
+gap:10px;
+}
+
+input,button{
+padding:10px;
+border:none;
+border-radius:6px;
+}
+
+button{
+background:gold;
+font-weight:bold;
+cursor:pointer;
+}
+
+.next-btn{
+margin-top:20px;
+}
+
+.date{
+text-align:center;
+color:#aaa;
+margin-top:10px;
+}
+
+</style>
 </head>
+
 <body>
 
 <div class="container">
-    <h1 id="total">₱0</h1>
-    <div class="goal">Goal: ₱100,000</div>
 
-    <div class="bar-bg">
-        <div class="bar-fill" id="progressBar"></div>
-    </div>
+<h1>Gold Tracker Dashboard</h1>
 
-    <div class="input-row">
-        <input type="number" id="amount" placeholder="Enter amount">
-        <button onclick="addMoney()">+</button>
-    </div>
+<div class="date" id="date"></div>
+
+<div class="dashboard">
+
+<div class="card">
+Total Capital
+<h2 id="totalCapital">0</h2>
+</div>
+
+<div class="card">
+Total Gram
+<h2 id="totalGram">0</h2>
+</div>
+
+<div class="card">
+Total Sussuk
+<h2 id="totalSussuk">0</h2>
+</div>
+
+</div>
+
+<form id="goldForm">
+
+<input type="file" id="photo">
+
+<input type="number" placeholder="Capital" id="capital" required>
+
+<input type="number" step="0.01" placeholder="Gram" id="gram" required>
+
+<input type="text" placeholder="Paid By (Name)" id="paid" required>
+
+<button type="submit">Add Gold</button>
+
+</form>
+
+<table>
+
+<thead>
+
+<tr>
+
+<th>Photo</th>
+<th onclick="sortTable('capital')">Capital</th>
+<th onclick="sortTable('gram')">Gram</th>
+<th>Sussuk</th>
+<th onclick="sortTable('price')">Price/Gram</th>
+<th>Paid By</th>
+
+</tr>
+
+</thead>
+
+<tbody id="tableBody"></tbody>
+
+</table>
+
+<button class="next-btn" onclick="nextDay()">Next Date</button>
+
 </div>
 
 <script>
-    const GOAL = 100000;
 
-    let total = localStorage.getItem("savingsTotal")
-        ? parseFloat(localStorage.getItem("savingsTotal"))
-        : 0;
+let data = JSON.parse(localStorage.getItem("goldData")) || []
 
-    const totalDisplay = document.getElementById("total");
-    const progressBar = document.getElementById("progressBar");
+let day = 0
 
-    function updateUI() {
-        totalDisplay.innerText = "₱" + total.toLocaleString();
-        let percent = (total / GOAL) * 100;
-        if (percent > 100) percent = 100;
-        progressBar.style.width = percent + "%";
-    }
+function render(){
 
-    function addMoney() {
-        let amount = parseFloat(document.getElementById("amount").value);
-        if (!isNaN(amount) && amount > 0) {
-            total += amount;
-            localStorage.setItem("savingsTotal", total);
-            document.getElementById("amount").value = "";
-            updateUI();
-        }
-    }
+let tbody = document.getElementById("tableBody")
 
-    updateUI();
+tbody.innerHTML=""
+
+let totalCapital=0
+let totalGram=0
+let totalSussuk=0
+
+data.forEach(item=>{
+
+let sussuk = item.gram*2.7
+let price = item.capital/item.gram
+
+totalCapital += item.capital
+totalGram += item.gram
+totalSussuk += sussuk
+
+let row=`
+
+<tr>
+
+<td><img src="${item.photo}"></td>
+
+<td>${item.capital}</td>
+
+<td>${item.gram}</td>
+
+<td>${sussuk.toFixed(2)}</td>
+
+<td>${price.toFixed(2)}</td>
+
+<td>${item.paid}</td>
+
+</tr>
+
+`
+
+tbody.innerHTML+=row
+
+})
+
+document.getElementById("totalCapital").innerText = "₱"+totalCapital
+document.getElementById("totalGram").innerText = totalGram.toFixed(2)
+document.getElementById("totalSussuk").innerText = totalSussuk.toFixed(2)
+
+localStorage.setItem("goldData",JSON.stringify(data))
+
+}
+
+document.getElementById("goldForm").onsubmit=function(e){
+
+e.preventDefault()
+
+let photoFile=document.getElementById("photo").files[0]
+
+let reader=new FileReader()
+
+reader.onload=function(){
+
+let newItem={
+
+photo:reader.result,
+capital:parseFloat(document.getElementById("capital").value),
+gram:parseFloat(document.getElementById("gram").value),
+paid:document.getElementById("paid").value
+
+}
+
+data.push(newItem)
+
+render()
+
+}
+
+reader.readAsDataURL(photoFile)
+
+}
+
+function sortTable(type){
+
+data.sort((a,b)=>{
+
+if(type=="price"){
+
+return (a.capital/a.gram)-(b.capital/b.gram)
+
+}
+
+return a[type]-b[type]
+
+})
+
+render()
+
+}
+
+function nextDay(){
+
+day++
+
+let d=new Date()
+
+d.setDate(d.getDate()+day)
+
+document.getElementById("date").innerHTML=d.toDateString()
+
+}
+
+nextDay()
+
+render()
+
 </script>
 
 </body>
