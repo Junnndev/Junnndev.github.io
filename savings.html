@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>₱100 × 100 Days</title>
+<title>₱100 Daily Saver</title>
 <style>
   *{box-sizing:border-box}
   body{margin:0;font-family:system-ui,-apple-system,Segoe UI,sans-serif;background:#f5f7fb;color:#172033}
@@ -20,7 +20,7 @@
   button{border:0;border-radius:12px;padding:11px 15px;font-weight:700;cursor:pointer}
   .primary{background:#46b96b;color:white}
   .secondary{background:white;color:#172033;border:1px solid #dce1ea}
-  .days{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+  .days{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:24px}
   .day{background:white;border:1px solid #e1e5ec;border-radius:15px;padding:13px;min-height:88px;cursor:pointer;text-align:left}
   .day.done{border-color:#46b96b;background:#effaf2}
   .day.today{box-shadow:0 0 0 3px #cfeeda}
@@ -30,18 +30,31 @@
   .done .check{color:#24934a}
   .empty{opacity:.45}
   .note{margin-top:16px;color:#667085;font-size:13px}
-  @media(max-width:600px){.days{grid-template-columns:repeat(2,1fr)}.stats{grid-template-columns:1fr 1fr}.stats .stat:last-child{grid-column:span 2}}
+  .section-title{font-size:18px;font-weight:700;margin:8px 0 12px}
+  .history{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px}
+  .hist{background:white;border:1px solid #e1e5ec;border-radius:12px;padding:10px;text-align:center;font-size:13px}
+  .hist.done{border-color:#46b96b;background:#effaf2}
+  .hist.missed{border-color:#e8a0a0;background:#fff5f5}
+  .hist .mark{font-size:20px;margin-top:4px}
+  .hist.done .mark{color:#24934a}
+  .hist.missed .mark{color:#c0392b}
+  .hist.today{box-shadow:0 0 0 2px #cfeeda}
+  @media(max-width:600px){
+    .days{grid-template-columns:repeat(2,1fr)}
+    .stats{grid-template-columns:1fr 1fr}
+    .stats .stat:last-child{grid-column:span 2}
+  }
 </style>
 </head>
 <body>
 <div class="wrap">
 <header>
-  <h1>₱100 × 100 Days</h1>
+  <h1>₱100 Daily Saver</h1>
   <div class="sub">Save ₱100 every day. Mark each real-life saving with ✓.</div>
   <div class="stats">
     <div class="stat"><span>Saved</span><b id="saved">₱0</b></div>
-    <div class="stat"><span>Days</span><b id="count">0 / 100</b></div>
-    <div class="stat"><span>Remaining</span><b id="remaining">₱10,000</b></div>
+    <div class="stat"><span>Days</span><b id="count">0</b></div>
+    <div class="stat"><span>Total Saved</span><b id="totalSaved">₱0</b></div>
   </div>
   <div class="progress"><div class="bar" id="bar"></div></div>
 </header>
@@ -52,93 +65,154 @@
   <button class="secondary" id="resetBtn">Reset</button>
 </div>
 
+<div class="section-title">Today & Tomorrow</div>
 <div class="days" id="days"></div>
-<div class="note">Only today and the next day are shown. Save today and it automatically disappears, while the next day moves into today's position. Completed days cannot be undone.</div>
+
+<div class="section-title">History</div>
+<div class="history" id="history"></div>
+<div class="note">✓ = saved that day · X = missed. History shows every day from your start date up to today. Completed days cannot be undone.</div>
 </div>
 
 <script>
-const TOTAL=100, AMOUNT=100;
-const key="saving100x100";
-let start=localStorage.getItem(key+"_start");
-if(!start){ start=new Date().toISOString().slice(0,10); localStorage.setItem(key+"_start",start); }
-let checked=JSON.parse(localStorage.getItem(key+"_checked")||"[]");
-
-function dateAt(i){
-  const d=new Date(start+"T00:00:00"); d.setDate(d.getDate()+i);
-  return d;
+const AMOUNT = 100;
+const key = "saving100daily";
+let start = localStorage.getItem(key + "_start");
+if (!start) {
+  start = new Date().toISOString().slice(0, 10);
+  localStorage.setItem(key + "_start", start);
 }
-function fmt(d){return d.toLocaleDateString(undefined,{month:"short",day:"numeric"});}
-function save(){localStorage.setItem(key+"_checked",JSON.stringify(checked)); render();}
-function render(){
-  const box=document.getElementById("days"); box.innerHTML="";
-  const now=new Date();
-  const todayIso=now.toISOString().slice(0,10);
-  const d0=new Date(start+"T00:00:00");
-  const dn=new Date(todayIso+"T00:00:00");
-  const todayIndex=Math.floor((dn-d0)/86400000);
+// Store checked dates as ISO strings: ["2026-08-10", "2026-08-11", ...]
+let checked = JSON.parse(localStorage.getItem(key + "_checked") || "[]");
 
-  // Keep only the next two uncompleted days visible.
-  const pending=[];
-  for(let i=Math.max(0,todayIndex); i<TOTAL && pending.length<2; i++){
-    if(!checked.includes(i)) pending.push(i);
-  }
-
-  pending.forEach((i,slot)=>{
-    const d=dateAt(i);
-    const isToday=i===todayIndex;
-    const el=document.createElement("button");
-    el.className="day"+(isToday?" today":"");
-    el.innerHTML=`<div class="num">DAY ${i+1}</div>
-      <div class="date">${isToday?"Today":fmt(d)}</div>
-      <div class="check">₱100</div>`;
-    if(isToday){
-      el.onclick=()=>markToday();
-    } else {
-      el.disabled=true;
-      el.innerHTML+=`<div class="num">Tomorrow</div>`;
-    }
-    box.appendChild(el);
+function todayIso() {
+  return new Date().toISOString().slice(0, 10);
+}
+function addDays(iso, n) {
+  const d = new Date(iso + "T00:00:00");
+  d.setDate(d.getDate() + n);
+  return d.toISOString().slice(0, 10);
+}
+function fmt(iso) {
+  return new Date(iso + "T00:00:00").toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric"
   });
-
-  if(pending.length===0){
-    box.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:30px;background:white;border-radius:15px">🎉 100-day challenge complete!</div>';
-  }
-
-  const n=checked.length;
-  document.getElementById("saved").textContent="₱"+(n*AMOUNT).toLocaleString();
-  document.getElementById("count").textContent=n+" / "+TOTAL;
-  document.getElementById("remaining").textContent="₱"+((TOTAL-n)*AMOUNT).toLocaleString();
-  document.getElementById("bar").style.width=(n/TOTAL*100)+"%";
+}
+function fmtShort(iso) {
+  return new Date(iso + "T00:00:00").toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric"
+  });
+}
+function daysBetween(a, b) {
+  const d0 = new Date(a + "T00:00:00");
+  const d1 = new Date(b + "T00:00:00");
+  return Math.floor((d1 - d0) / 86400000);
+}
+function save() {
+  localStorage.setItem(key + "_checked", JSON.stringify(checked));
+  render();
 }
 
-function markToday(){
-  const todayIso=new Date().toISOString().slice(0,10);
-  const d0=new Date(start+"T00:00:00");
-  const dn=new Date(todayIso+"T00:00:00");
-  const todayIndex=Math.floor((dn-d0)/86400000);
-  if(todayIndex>=0 && todayIndex<TOTAL && !checked.includes(todayIndex)){
-    checked.push(todayIndex);
-    checked.sort((a,b)=>a-b);
+function render() {
+  const today = todayIso();
+  const tomorrow = addDays(today, 1);
+  const isTodayDone = checked.includes(today);
+
+  // --- Today & Tomorrow cards ---
+  const box = document.getElementById("days");
+  box.innerHTML = "";
+
+  // Today
+  const todayEl = document.createElement("button");
+  todayEl.className = "day today" + (isTodayDone ? " done" : "");
+  todayEl.innerHTML = `
+    <div class="num">TODAY</div>
+    <div class="date">${fmtShort(today)}</div>
+    <div class="check">${isTodayDone ? "✓" : "₱100"}</div>`;
+  if (!isTodayDone) {
+    todayEl.onclick = markToday;
+  } else {
+    todayEl.disabled = true;
+  }
+  box.appendChild(todayEl);
+
+  // Tomorrow (preview only)
+  const tomEl = document.createElement("button");
+  tomEl.className = "day";
+  tomEl.disabled = true;
+  tomEl.innerHTML = `
+    <div class="num">TOMORROW</div>
+    <div class="date">${fmtShort(tomorrow)}</div>
+    <div class="check empty">₱100</div>`;
+  box.appendChild(tomEl);
+
+  // --- History ---
+  const histBox = document.getElementById("history");
+  histBox.innerHTML = "";
+  const totalDays = daysBetween(start, today) + 1; // inclusive
+
+  for (let i = 0; i < totalDays; i++) {
+    const iso = addDays(start, i);
+    const done = checked.includes(iso);
+    const isToday = iso === today;
+    const el = document.createElement("div");
+    el.className = "hist" + (done ? " done" : " missed") + (isToday ? " today" : "");
+    el.innerHTML = `
+      <div>${fmtShort(iso)}</div>
+      <div class="mark">${done ? "✓" : "X"}</div>`;
+    histBox.appendChild(el);
+  }
+
+  // --- Stats ---
+  const n = checked.length;
+  const total = n * AMOUNT;
+  document.getElementById("saved").textContent = "₱" + total.toLocaleString();
+  document.getElementById("count").textContent = n;
+  document.getElementById("totalSaved").textContent = "₱" + total.toLocaleString();
+
+  // Progress bar = success rate so far (checked / days elapsed)
+  const rate = totalDays > 0 ? (n / totalDays) * 100 : 0;
+  document.getElementById("bar").style.width = Math.min(100, rate) + "%";
+}
+
+function markToday() {
+  const today = todayIso();
+  if (!checked.includes(today)) {
+    checked.push(today);
+    checked.sort();
     save();
   }
 }
 
-document.getElementById("todayBtn").onclick=markToday;
-document.getElementById("remindBtn").onclick=async()=>{
-  if(!("Notification" in window)){alert("This browser does not support notifications.");return}
-  const p=await Notification.requestPermission();
-  if(p==="granted"){
-    localStorage.setItem(key+"_reminder","yes");
-    new Notification("₱100 Daily Goal",{body:"Time to save ₱100 and mark today ✓!"});
+document.getElementById("todayBtn").onclick = markToday;
+
+document.getElementById("remindBtn").onclick = async () => {
+  if (!("Notification" in window)) {
+    alert("This browser does not support notifications.");
+    return;
+  }
+  const p = await Notification.requestPermission();
+  if (p === "granted") {
+    localStorage.setItem(key + "_reminder", "yes");
+    new Notification("₱100 Daily Goal", {
+      body: "Time to save ₱100 and mark today ✓!"
+    });
     alert("Reminder permission enabled. For reliable daily reminders even when the page is closed, add this site to your phone's home screen or use a device/browser reminder.");
   }
 };
-document.getElementById("resetBtn").onclick=()=>{
-  if(confirm("Reset all checkmarks and start a new 100-day challenge?")){
-    start=new Date().toISOString().slice(0,10); checked=[];
-    localStorage.setItem(key+"_start",start); localStorage.setItem(key+"_checked","[]"); render();
+
+document.getElementById("resetBtn").onclick = () => {
+  if (confirm("Reset all progress and start over from today?")) {
+    start = todayIso();
+    checked = [];
+    localStorage.setItem(key + "_start", start);
+    localStorage.setItem(key + "_checked", "[]");
+    render();
   }
 };
+
 render();
 </script>
 </body>
