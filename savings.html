@@ -1,292 +1,145 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Gold Tracker Pro</title>
-
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>₱100 × 100 Days</title>
 <style>
-
-body{
-font-family:Arial;
-background:#0f0f0f;
-color:white;
-padding:30px;
-}
-
-.container{
-max-width:1200px;
-margin:auto;
-}
-
-h1{
-text-align:center;
-}
-
-.dashboard{
-display:flex;
-gap:20px;
-margin-top:20px;
-}
-
-.card{
-flex:1;
-background:#1a1a1a;
-padding:15px;
-border-radius:10px;
-text-align:center;
-}
-
-table{
-width:100%;
-border-collapse:collapse;
-margin-top:20px;
-}
-
-th,td{
-padding:12px;
-text-align:center;
-}
-
-th{
-background:#222;
-cursor:pointer;
-}
-
-tr{
-border-bottom:1px solid #333;
-}
-
-tr:hover{
-background:#1a1a1a;
-}
-
-img{
-width:60px;
-border-radius:6px;
-}
-
-form{
-margin-top:25px;
-background:#1a1a1a;
-padding:20px;
-border-radius:10px;
-display:grid;
-grid-template-columns:repeat(4,1fr);
-gap:10px;
-}
-
-input,button{
-padding:10px;
-border:none;
-border-radius:6px;
-}
-
-button{
-background:gold;
-font-weight:bold;
-cursor:pointer;
-}
-
-.next-btn{
-margin-top:20px;
-}
-
-.date{
-text-align:center;
-color:#aaa;
-margin-top:10px;
-}
-
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,-apple-system,Segoe UI,sans-serif;background:#f5f7fb;color:#172033}
+  .wrap{max-width:900px;margin:auto;padding:24px 16px 40px}
+  header{background:#172033;color:white;border-radius:22px;padding:25px;margin-bottom:18px}
+  h1{margin:0 0 5px;font-size:28px}
+  .sub{opacity:.78}
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:20px}
+  .stat{background:#26324a;border-radius:15px;padding:13px}
+  .stat b{display:block;font-size:22px}
+  .progress{height:12px;background:#dfe4ee;border-radius:20px;overflow:hidden;margin-top:18px}
+  .bar{height:100%;width:0;background:#46b96b;transition:.25s}
+  .controls{display:flex;gap:10px;margin:18px 0;flex-wrap:wrap}
+  button{border:0;border-radius:12px;padding:11px 15px;font-weight:700;cursor:pointer}
+  .primary{background:#46b96b;color:white}
+  .secondary{background:white;color:#172033;border:1px solid #dce1ea}
+  .days{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+  .day{background:white;border:1px solid #e1e5ec;border-radius:15px;padding:13px;min-height:88px;cursor:pointer;text-align:left}
+  .day.done{border-color:#46b96b;background:#effaf2}
+  .day.today{box-shadow:0 0 0 3px #cfeeda}
+  .num{font-size:12px;color:#667085}
+  .date{font-weight:700;margin:3px 0}
+  .check{font-size:23px}
+  .done .check{color:#24934a}
+  .empty{opacity:.45}
+  .note{margin-top:16px;color:#667085;font-size:13px}
+  @media(max-width:600px){.days{grid-template-columns:repeat(2,1fr)}.stats{grid-template-columns:1fr 1fr}.stats .stat:last-child{grid-column:span 2}}
 </style>
 </head>
-
 <body>
+<div class="wrap">
+<header>
+  <h1>₱100 × 100 Days</h1>
+  <div class="sub">Save ₱100 every day. Mark each real-life saving with ✓.</div>
+  <div class="stats">
+    <div class="stat"><span>Saved</span><b id="saved">₱0</b></div>
+    <div class="stat"><span>Days</span><b id="count">0 / 100</b></div>
+    <div class="stat"><span>Remaining</span><b id="remaining">₱10,000</b></div>
+  </div>
+  <div class="progress"><div class="bar" id="bar"></div></div>
+</header>
 
-<div class="container">
-
-<h1>Gold Tracker Dashboard</h1>
-
-<div class="date" id="date"></div>
-
-<div class="dashboard">
-
-<div class="card">
-Total Capital
-<h2 id="totalCapital">0</h2>
+<div class="controls">
+  <button class="primary" id="todayBtn">✓ Save today — ₱100</button>
+  <button class="secondary" id="remindBtn">🔔 Enable daily reminder</button>
+  <button class="secondary" id="resetBtn">Reset</button>
 </div>
 
-<div class="card">
-Total Gram
-<h2 id="totalGram">0</h2>
-</div>
-
-<div class="card">
-Total Sussuk
-<h2 id="totalSussuk">0</h2>
-</div>
-
-</div>
-
-<form id="goldForm">
-
-<input type="file" id="photo">
-
-<input type="number" placeholder="Capital" id="capital" required>
-
-<input type="number" step="0.01" placeholder="Gram" id="gram" required>
-
-<input type="text" placeholder="Paid By (Name)" id="paid" required>
-
-<button type="submit">Add Gold</button>
-
-</form>
-
-<table>
-
-<thead>
-
-<tr>
-
-<th>Photo</th>
-<th onclick="sortTable('capital')">Capital</th>
-<th onclick="sortTable('gram')">Gram</th>
-<th>Sussuk</th>
-<th onclick="sortTable('price')">Price/Gram</th>
-<th>Paid By</th>
-
-</tr>
-
-</thead>
-
-<tbody id="tableBody"></tbody>
-
-</table>
-
-<button class="next-btn" onclick="nextDay()">Next Date</button>
-
+<div class="days" id="days"></div>
+<div class="note">Only today and the next day are shown. Save today and it automatically disappears, while the next day moves into today's position. Completed days cannot be undone.</div>
 </div>
 
 <script>
+const TOTAL=100, AMOUNT=100;
+const key="saving100x100";
+let start=localStorage.getItem(key+"_start");
+if(!start){ start=new Date().toISOString().slice(0,10); localStorage.setItem(key+"_start",start); }
+let checked=JSON.parse(localStorage.getItem(key+"_checked")||"[]");
 
-let data = JSON.parse(localStorage.getItem("goldData")) || []
-
-let day = 0
-
+function dateAt(i){
+  const d=new Date(start+"T00:00:00"); d.setDate(d.getDate()+i);
+  return d;
+}
+function fmt(d){return d.toLocaleDateString(undefined,{month:"short",day:"numeric"});}
+function save(){localStorage.setItem(key+"_checked",JSON.stringify(checked)); render();}
 function render(){
+  const box=document.getElementById("days"); box.innerHTML="";
+  const now=new Date();
+  const todayIso=now.toISOString().slice(0,10);
+  const d0=new Date(start+"T00:00:00");
+  const dn=new Date(todayIso+"T00:00:00");
+  const todayIndex=Math.floor((dn-d0)/86400000);
 
-let tbody = document.getElementById("tableBody")
+  // Keep only the next two uncompleted days visible.
+  const pending=[];
+  for(let i=Math.max(0,todayIndex); i<TOTAL && pending.length<2; i++){
+    if(!checked.includes(i)) pending.push(i);
+  }
 
-tbody.innerHTML=""
+  pending.forEach((i,slot)=>{
+    const d=dateAt(i);
+    const isToday=i===todayIndex;
+    const el=document.createElement("button");
+    el.className="day"+(isToday?" today":"");
+    el.innerHTML=`<div class="num">DAY ${i+1}</div>
+      <div class="date">${isToday?"Today":fmt(d)}</div>
+      <div class="check">₱100</div>`;
+    if(isToday){
+      el.onclick=()=>markToday();
+    } else {
+      el.disabled=true;
+      el.innerHTML+=`<div class="num">Tomorrow</div>`;
+    }
+    box.appendChild(el);
+  });
 
-let totalCapital=0
-let totalGram=0
-let totalSussuk=0
+  if(pending.length===0){
+    box.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:30px;background:white;border-radius:15px">🎉 100-day challenge complete!</div>';
+  }
 
-data.forEach(item=>{
-
-let sussuk = item.gram*2.7
-let price = item.capital/item.gram
-
-totalCapital += item.capital
-totalGram += item.gram
-totalSussuk += sussuk
-
-let row=`
-
-<tr>
-
-<td><img src="${item.photo}"></td>
-
-<td>${item.capital}</td>
-
-<td>${item.gram}</td>
-
-<td>${sussuk.toFixed(2)}</td>
-
-<td>${price.toFixed(2)}</td>
-
-<td>${item.paid}</td>
-
-</tr>
-
-`
-
-tbody.innerHTML+=row
-
-})
-
-document.getElementById("totalCapital").innerText = "₱"+totalCapital
-document.getElementById("totalGram").innerText = totalGram.toFixed(2)
-document.getElementById("totalSussuk").innerText = totalSussuk.toFixed(2)
-
-localStorage.setItem("goldData",JSON.stringify(data))
-
+  const n=checked.length;
+  document.getElementById("saved").textContent="₱"+(n*AMOUNT).toLocaleString();
+  document.getElementById("count").textContent=n+" / "+TOTAL;
+  document.getElementById("remaining").textContent="₱"+((TOTAL-n)*AMOUNT).toLocaleString();
+  document.getElementById("bar").style.width=(n/TOTAL*100)+"%";
 }
 
-document.getElementById("goldForm").onsubmit=function(e){
-
-e.preventDefault()
-
-let photoFile=document.getElementById("photo").files[0]
-
-let reader=new FileReader()
-
-reader.onload=function(){
-
-let newItem={
-
-photo:reader.result,
-capital:parseFloat(document.getElementById("capital").value),
-gram:parseFloat(document.getElementById("gram").value),
-paid:document.getElementById("paid").value
-
+function markToday(){
+  const todayIso=new Date().toISOString().slice(0,10);
+  const d0=new Date(start+"T00:00:00");
+  const dn=new Date(todayIso+"T00:00:00");
+  const todayIndex=Math.floor((dn-d0)/86400000);
+  if(todayIndex>=0 && todayIndex<TOTAL && !checked.includes(todayIndex)){
+    checked.push(todayIndex);
+    checked.sort((a,b)=>a-b);
+    save();
+  }
 }
 
-data.push(newItem)
-
-render()
-
-}
-
-reader.readAsDataURL(photoFile)
-
-}
-
-function sortTable(type){
-
-data.sort((a,b)=>{
-
-if(type=="price"){
-
-return (a.capital/a.gram)-(b.capital/b.gram)
-
-}
-
-return a[type]-b[type]
-
-})
-
-render()
-
-}
-
-function nextDay(){
-
-day++
-
-let d=new Date()
-
-d.setDate(d.getDate()+day)
-
-document.getElementById("date").innerHTML=d.toDateString()
-
-}
-
-nextDay()
-
-render()
-
+document.getElementById("todayBtn").onclick=markToday;
+document.getElementById("remindBtn").onclick=async()=>{
+  if(!("Notification" in window)){alert("This browser does not support notifications.");return}
+  const p=await Notification.requestPermission();
+  if(p==="granted"){
+    localStorage.setItem(key+"_reminder","yes");
+    new Notification("₱100 Daily Goal",{body:"Time to save ₱100 and mark today ✓!"});
+    alert("Reminder permission enabled. For reliable daily reminders even when the page is closed, add this site to your phone's home screen or use a device/browser reminder.");
+  }
+};
+document.getElementById("resetBtn").onclick=()=>{
+  if(confirm("Reset all checkmarks and start a new 100-day challenge?")){
+    start=new Date().toISOString().slice(0,10); checked=[];
+    localStorage.setItem(key+"_start",start); localStorage.setItem(key+"_checked","[]"); render();
+  }
+};
+render();
 </script>
-
 </body>
 </html>
